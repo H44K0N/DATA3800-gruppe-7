@@ -3,3 +3,4 @@
 ## Medlemmer
 
  - Erik Skålhegg (erska3275@oslomet.no)
+ - Abdulkadir Koc (abkoc1049@oslomet.no)
