@@ -11,6 +11,4 @@
 * TBD
 
 #### Main goals of this project:
-* Estimate the severity of an accident based on dataset
-  * Conditions such as weather, road details, car details, etc.
-* What factors make a traffic accident more or less likely
+* What factors make a traffic accident more or less likely to result in personal injury
