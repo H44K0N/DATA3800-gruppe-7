@@ -15,7 +15,8 @@
 [Traffic Crashes - Crashes](https://data.cityofchicago.org/Transportation/Traffic-Crashes-Crashes/85ca-t3if/data_preview) from the City of Chicago's Data Portal
 
 #### What scientific literature was chosen?
-* TBD
+* Analysis of driver injury severity levels at multiple locations using ordered probit models (https://doi.org/10.1016/j.jsr.2003.05.009)
+* The statistical analysis of highway crash-injury severities: A review and assessment of methodological alternatives (https://doi.org/10.1016/j.aap.2011.03.025)
 
 #### Main goals of this project:
 * What factors make a traffic accident more or less likely to result in personal injury
