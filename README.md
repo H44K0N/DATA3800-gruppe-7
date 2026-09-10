@@ -20,3 +20,12 @@
 
 #### Main goals of this project:
 * What factors make a traffic accident more or less likely to result in personal injury
+
+
+INTERNAL
+---
+Before coding, do:
+git clone <repo> && cd myproject
+uv sync                 # builds .venv from the lockfile, installs correct Python version if missing
+uv run pre-commit install
+uv run jupyter lab      # or select .venv as the kernel in VS Code
