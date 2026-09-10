@@ -1,1 +1,5 @@
-# DATA3800-gruppe-47
+# DATA3800-gruppe-7
+
+## Medlemmer
+
+ - Erik Skålhegg (erska3275@oslomet.no)
