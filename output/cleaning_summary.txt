@@ -1,0 +1,75 @@
+# DATA3800 Group 7 – Data Cleaning Summary
+
+## Dataset
+
+Source: City of Chicago Traffic Crashes
+
+Study period: January 1 – December 31, 2025
+
+Original dataset: 1,092,380 records across multiple years.
+
+2025 records before target cleaning: 109,118.
+
+Records excluded because of missing injury totals: 215.
+
+Final dataset: 108,903 records.
+
+## Target Variable
+
+A binary target variable, `injury`, was created from `INJURIES_TOTAL`:
+
+- 0: No recorded injury
+- 1: At least one recorded injury
+
+Final target distribution:
+
+- Injury: 17,902
+- No injury: 91,001
+
+## Selected Predictors
+
+1. POSTED_SPEED_LIMIT
+2. WEATHER_CONDITION
+3. LIGHTING_CONDITION
+4. ROADWAY_SURFACE_COND
+5. CRASH_HOUR
+
+## Data Cleaning Decisions
+
+- Restricted the dataset to crashes recorded in 2025.
+- Removed records with missing or invalid injury totals.
+- Checked for duplicate crash IDs; none were found.
+- Converted numeric predictors to numeric types.
+- Treated 198 zero speed-limit values as missing because we could not confirm that zero represented a valid posted speed limit. These crashes were kept in the dataset.
+- Preserved UNKNOWN categories for weather (8,821), lighting (6,829), and road surface (15,362).
+- Verified that crash hours were within the valid range 0–23.
+- Preserved CRASH_DATE for chronological splitting.
+- Did not impute missing predictor values or encode categorical features during cleaning.
+
+Unusual nonzero posted speed limits were retained for further inspection.
+
+## Leakage Prevention
+
+`INJURIES_TOTAL` was used only to construct the binary target.
+
+The five selected predictors exclude injury totals, injury severity, and related outcome information.
+
+The target variable `injury` is provided separately as `y`, while the selected predictors form `X`.
+
+## Reproducibility
+
+The cleaning procedure is implemented in `src/data3800_gruppe_7/cleaning.py`.
+
+The processing script is `run_cleaning.py`.
+
+The cleaned data is saved as `data/cleaned_crashes.csv`.
+
+All automated checks in `test_cleaning.py` passed.
+
+The input file is data/raw_dataset.csv. The original data file is not modified by the cleaning script.
+
+## Note on Dataset Version
+
+The previous project presentation reported 109,117 crashes in 2025. The current local dataset contains 109,118 crashes for that year.
+
+The difference of one record has not been conclusively explained. No additional record was removed to force the earlier count.
