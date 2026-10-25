@@ -77,7 +77,7 @@ After cleaning, the data has 108,903 police-reported crashes from 2025, and 16.4
 - Wet roads have an injury share of 20.5% and icy roads 10.3%.
 - When the conditions are recorded as UNKNOWN, only 5.5 to 7.8% of the crashes involve injuries.
 
-These are associations in police-reported crashes and do not show that the conditions cause the injuries.
+These are associations in police-reported crashes and do not show that the conditions cause the injuries. The four figures from the analysis are in `notebooks/02-eda.ipynb`.
 
 ### Models
 
@@ -92,8 +92,17 @@ We train four models: a baseline that always predicts no injury, logistic regres
 
 - The baseline has the best accuracy and finds no injuries, so we compare the models on recall, precision, F1 and PR-AUC instead.
 - The models find 74 to 81% of the injuries, but only about one in five flagged crashes had one, against one in six for a random crash. The five conditions carry real but weak information about injury.
+
+![Confusion matrices for the four models on the test set](output/evaluation/confusion_matrices.png)
+
 - Logistic regression and the random forest are equally good: a paired bootstrap interval for their difference in PR-AUC contains 0. We prefer logistic regression because it is simpler and easier to interpret. The decision tree ranks crashes worse.
+
+![ROC and precision-recall curves for the three trained models](output/evaluation/roc_pr_curves.png)
+
 - The speed limit is the most important condition in all models, followed by road surface and lighting. Higher speed limits, wet roads, darkness and night-time go with more injuries, snow and ice with fewer.
+
+![Permutation importance of the five conditions in the three trained models](output/evaluation/permutation_importance.png)
+
 - Crashes with UNKNOWN conditions have much lower odds of injury, which most likely reflects how minor crashes are reported rather than how crashes happen.
 
 ---
