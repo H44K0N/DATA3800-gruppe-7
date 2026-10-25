@@ -138,4 +138,4 @@ If `uv.lock` gets a merge conflict, don't edit it by hand: accept either side, r
 * Name notebooks `NN-initials-topic.ipynb`, e.g. `01-hmt-eda.ipynb`. One notebook, one owner.
 * Reusable code (loading, cleaning, features) goes in `src/`, not in notebooks.
 * Start every notebook with `%load_ext autoreload` and `%autoreload 2` so edits in `src/` are picked up without restarting the kernel.
-* Outputs are stripped automatically on commit. If a commit is aborted because the hook modified files, `git add` the notebook and commit again.
+* Outputs are stripped automatically on commit, except in `02-eda.ipynb`, which keeps its figures. If a commit is aborted because the hook modified files, `git add` the notebook and commit again.
