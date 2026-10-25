@@ -5,8 +5,8 @@
  - Erik Skålhegg (erska3276@oslomet.no)
  - Emirhan Güven (emguv8653@oslomet.no)
  - Abdulkadir Koc (abkoc1049@oslomet.no)
- - Haakon Meyer Tischbein
- - Sondre Gullichsen Ulsaker
+ - Haakon Meyer Tischbein (hatis6619@oslomet.no)
+ - Sondre Gullichsen Ulsaker (souls3256@oslomet.no)
 
 ## About the project
 
@@ -32,6 +32,7 @@ uv sync
 uv run python data_fetch.py
 uv run python run_cleaning.py
 uv run python -m data3800_gruppe_7.modeling
+uv run python -m data3800_gruppe_7.evaluation
 uv run jupyter lab
 ```
 
@@ -39,7 +40,8 @@ uv run jupyter lab
 2. `data_fetch.py` downloads the raw data to `data/raw_dataset.csv`.
 3. `run_cleaning.py` saves the cleaned data in `data/cleaned_crashes.csv`. The EDA notebook reads this file, so it has to exist before the notebook runs.
 4. The modeling module trains four models and saves them in `output/models/`, together with their predictions on the test set. The evaluation notebook reads these files.
-5. In Jupyter, run the notebooks in order: `02-eda.ipynb`, `03-eg-modeling.ipynb` and `04_evaluation.ipynb`.
+5. The evaluation module computes the metrics, confusion matrices and feature importance, and saves the tables and figures in `output/evaluation/`. It takes about a minute.
+6. In Jupyter, run the notebooks in order: `02-eda.ipynb`, `03-eg-modeling.ipynb` and `04_evaluation.ipynb`.
 
 The `data/` and `output/models/` folders are not on GitHub, so a new clone needs steps 2 to 4 before the notebooks will run.
 
@@ -51,7 +53,7 @@ The `data/` and `output/models/` folders are not on GitHub, so a new clone needs
 | Cleaning | `src/data3800_gruppe_7/cleaning.py`, `run_cleaning.py` | `data/cleaned_crashes.csv`, `output/cleaning_summary.txt` |
 | Exploratory analysis | `notebooks/02-eda.ipynb` | Tables and figures in the notebook |
 | Modeling | `src/data3800_gruppe_7/modeling.py`, `notebooks/03-eg-modeling.ipynb` | `output/models/*.joblib`, `output/models/predictions.csv` |
-| Evaluation | `notebooks/04_evaluation.ipynb` | Comparison of the models |
+| Evaluation | `src/data3800_gruppe_7/evaluation.py`, `notebooks/04_evaluation.ipynb` | `output/evaluation/*.csv`, `output/evaluation/*.png` |
 
 ## Who did what
 
@@ -79,7 +81,20 @@ These are associations in police-reported crashes and do not show that the condi
 
 ### Models
 
-We train four models: a baseline that always predicts no injury, logistic regression, a decision tree and a random forest. The evaluation notebook compares them.
+We train four models: a baseline that always predicts no injury, logistic regression, a decision tree and a random forest. On the test set of 21,781 crashes:
+
+| Model | Accuracy | Precision | Recall | F1 | ROC-AUC | PR-AUC |
+| --- | --- | --- | --- | --- | --- | --- |
+| Baseline | 0.836 | 0.000 | 0.000 | 0.000 | 0.500 | 0.164 |
+| Logistic regression | 0.475 | 0.201 | 0.739 | 0.316 | 0.613 | 0.216 |
+| Decision tree | 0.423 | 0.196 | 0.807 | 0.315 | 0.601 | 0.205 |
+| Random forest | 0.458 | 0.200 | 0.770 | 0.318 | 0.613 | 0.219 |
+
+- The baseline has the best accuracy and finds no injuries, so we compare the models on recall, precision, F1 and PR-AUC instead.
+- The models find 74 to 81% of the injuries, but only about one in five flagged crashes had one, against one in six for a random crash. The five conditions carry real but weak information about injury.
+- Logistic regression and the random forest are equally good: a paired bootstrap interval for their difference in PR-AUC contains 0. We prefer logistic regression because it is simpler and easier to interpret. The decision tree ranks crashes worse.
+- The speed limit is the most important condition in all models, followed by road surface and lighting. Higher speed limits, wet roads, darkness and night-time go with more injuries, snow and ice with fewer.
+- Crashes with UNKNOWN conditions have much lower odds of injury, which most likely reflects how minor crashes are reported rather than how crashes happen.
 
 ---
 
