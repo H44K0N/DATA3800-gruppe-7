@@ -1,12 +1,14 @@
 # DATA3800-gruppe-7
 
-## Medlemmer
+## Members
 
  - Erik Skålhegg (erska3276@oslomet.no)
  - Emirhan Güven (emguv8653@oslomet.no)
  - Abdulkadir Koc (abkoc1049@oslomet.no)
+ - Haakon Meyer Tischbein
+ - Sondre Gullichsen Ulsaker
 
-# DATA3800-gruppe-7
+## About the project
 
 #### What is this project?
 * A data science project where the goal is to review an open dataset in light of scientific literature
@@ -20,6 +22,64 @@
 
 #### Main goals of this project:
 * What factors make a traffic accident more or less likely to result in personal injury
+
+## How to run the pipeline
+
+Install uv first: https://docs.astral.sh/uv/getting-started/installation/. Then run these commands from the project root, in this order:
+
+```bash
+uv sync
+uv run python data_fetch.py
+uv run python run_cleaning.py
+uv run python -m data3800_gruppe_7.modeling
+uv run jupyter lab
+```
+
+1. `uv sync` installs the right Python version and the packages in `uv.lock`.
+2. `data_fetch.py` downloads the raw data to `data/raw_dataset.csv`.
+3. `run_cleaning.py` saves the cleaned data in `data/cleaned_crashes.csv`. The EDA notebook reads this file, so it has to exist before the notebook runs.
+4. The modeling module trains four models and saves them in `output/models/`, together with their predictions on the test set. The evaluation notebook reads these files.
+5. In Jupyter, run the notebooks in order: `02-eda.ipynb`, `03-eg-modeling.ipynb` and `04_evaluation.ipynb`.
+
+The `data/` and `output/models/` folders are not on GitHub, so a new clone needs steps 2 to 4 before the notebooks will run.
+
+## Pipeline
+
+| Step | Files | Output |
+| --- | --- | --- |
+| Download | `data_fetch.py` | `data/raw_dataset.csv` |
+| Cleaning | `src/data3800_gruppe_7/cleaning.py`, `run_cleaning.py` | `data/cleaned_crashes.csv`, `output/cleaning_summary.txt` |
+| Exploratory analysis | `notebooks/02-eda.ipynb` | Tables and figures in the notebook |
+| Modeling | `src/data3800_gruppe_7/modeling.py`, `notebooks/03-eg-modeling.ipynb` | `output/models/*.joblib`, `output/models/predictions.csv` |
+| Evaluation | `notebooks/04_evaluation.ipynb` | Comparison of the models |
+
+## Who did what
+
+| Part | Responsible |
+| --- | --- |
+| Data cleaning | Abdulkadir Koc |
+| Exploratory analysis | Erik Skålhegg |
+| Modeling | Emirhan Güven |
+| Evaluation | Haakon Meyer Tischbein |
+| Integration and documentation | Sondre Gullichsen Ulsaker, with the whole group |
+
+## Results
+
+### Exploratory analysis
+
+After cleaning, the data has 108,903 police-reported crashes from 2025, and 16.4% of them involved at least one injury. The exploratory analysis found these patterns:
+
+- The injury share is 15.9% in daylight and 20.7% in darkness on lighted roads.
+- By hour, the share is lowest in the morning (13.8% at 10:00) and between 18.5 and 20.8% from 21:00 to 04:00.
+- A higher posted speed limit goes with more injuries: 8.8% at 20 mph or less and 22.1% at 50 mph or more.
+- Wet roads have an injury share of 20.5% and icy roads 10.3%.
+- When the conditions are recorded as UNKNOWN, only 5.5 to 7.8% of the crashes involve injuries.
+
+These are associations in police-reported crashes and do not show that the conditions cause the injuries.
+
+### Models
+
+We train four models: a baseline that always predicts no injury, logistic regression, a decision tree and a random forest. The evaluation notebook compares them.
 
 ---
 
