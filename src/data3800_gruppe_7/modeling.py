@@ -23,27 +23,47 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.tree import DecisionTreeClassifier
 
-from data3800_gruppe_7.cleaning import FEATURES, clean_crashes, get_model_data
+from data3800_gruppe_7.cleaning import (
+    FEATURES,
+    REQUIRED_COLUMNS,
+    clean_crashes,
+    get_model_data,
+)
 
-# Paths are built from this file, so they work from the notebooks folder too.
+# This file is two folders below the project root. Building the paths from it
+# makes them work from the notebooks folder too.
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 RAW_DATA_PATH = PROJECT_ROOT / "data" / "raw_dataset.csv"
 MODELS_DIR = PROJECT_ROOT / "output" / "models"
+PREDICTIONS_PATH = MODELS_DIR / "predictions.csv"
 
-# Reading only the columns the cleaning needs is much faster than all 49.
-RAW_COLUMNS = ["CRASH_RECORD_ID", "CRASH_DATE", "INJURIES_TOTAL"] + FEATURES
+# Reading only these columns is much faster than reading all 49. The cleaning
+# needs REQUIRED_COLUMNS, and the predictions need the crash IDs.
+RAW_COLUMNS = ["CRASH_RECORD_ID"] + REQUIRED_COLUMNS
 
 NUMERIC_FEATURES = ["POSTED_SPEED_LIMIT"]
-# The hour is a category because injury risk does not rise steadily with it.
-CATEGORICAL_FEATURES = [
-    "WEATHER_CONDITION",
-    "LIGHTING_CONDITION",
-    "ROADWAY_SURFACE_COND",
-    "CRASH_HOUR",
-]
+# Every other feature is a category. That includes the hour, because injury
+# risk does not rise steadily with it.
+CATEGORICAL_FEATURES = [column for column in FEATURES if column not in NUMERIC_FEATURES]
 
 TEST_SIZE = 0.2
 RANDOM_STATE = 42
+
+# Starting values for the models. We have not tuned them yet.
+TREE_MAX_DEPTH = 8
+FOREST_TREES = 200
+FOREST_MIN_LEAF_SIZE = 50
+ALL_CPU_CORES = -1
+
+
+def main():
+    X, y, crash_ids = load_model_data()
+    X_train, X_test, y_train, y_test = split_train_test(X, y)
+    pipelines = train_models(X_train, y_train)
+    predictions = predict_test_set(pipelines, X_test, y_test, crash_ids)
+    save_models(pipelines)
+    save_predictions(predictions)
+    print(f"Saved {len(pipelines)} models and their predictions in {MODELS_DIR}")
 
 
 def load_model_data():
@@ -61,6 +81,36 @@ def split_train_test(X, y):
     )
 
 
+def train_models(X_train, y_train):
+    """Fit each model in a pipeline, so the preprocessing only sees training data."""
+    pipelines = {}
+    for name, model in build_models().items():
+        pipeline = Pipeline([("preprocess", build_preprocessor()), ("model", model)])
+        pipeline.fit(X_train, y_train)
+        pipelines[name] = pipeline
+    return pipelines
+
+
+def build_models():
+    """Return the four models we compare, by name."""
+    return {
+        "baseline": DummyClassifier(strategy="most_frequent"),
+        "logistic_regression": LogisticRegression(class_weight="balanced"),
+        "decision_tree": DecisionTreeClassifier(
+            max_depth=TREE_MAX_DEPTH,
+            class_weight="balanced",
+            random_state=RANDOM_STATE,
+        ),
+        "random_forest": RandomForestClassifier(
+            n_estimators=FOREST_TREES,
+            min_samples_leaf=FOREST_MIN_LEAF_SIZE,
+            class_weight="balanced",
+            random_state=RANDOM_STATE,
+            n_jobs=ALL_CPU_CORES,
+        ),
+    }
+
+
 def build_preprocessor():
     """One-hot encode the categories, and fill in and scale the speed limit."""
     numeric = Pipeline(
@@ -75,47 +125,20 @@ def build_preprocessor():
     )
 
 
-def build_models():
-    """Return the four models we compare, by name."""
-    return {
-        "baseline": DummyClassifier(strategy="most_frequent"),
-        "logistic_regression": LogisticRegression(class_weight="balanced"),
-        "decision_tree": DecisionTreeClassifier(
-            max_depth=8, class_weight="balanced", random_state=RANDOM_STATE
-        ),
-        "random_forest": RandomForestClassifier(
-            n_estimators=200,
-            min_samples_leaf=50,
-            class_weight="balanced",
-            random_state=RANDOM_STATE,
-            n_jobs=-1,  # train the trees on all CPU cores
-        ),
-    }
-
-
-def train_models(X_train, y_train):
-    """Fit each model in a pipeline, so the preprocessing only sees training data."""
-    pipelines = {}
-    for name, model in build_models().items():
-        pipeline = Pipeline([("preprocess", build_preprocessor()), ("model", model)])
-        pipeline.fit(X_train, y_train)
-        pipelines[name] = pipeline
-    return pipelines
-
-
 def predict_test_set(pipelines, X_test, y_test, crash_ids):
     """Return one row per crash and model with the true and predicted injury."""
     test_ids = crash_ids.loc[X_test.index].to_numpy()
     frames = []
     for name, pipeline in pipelines.items():
+        # Column 1 of predict_proba is the probability of class 1, injury.
+        injury_probability = pipeline.predict_proba(X_test)[:, 1]
         frame = pd.DataFrame(
             {
                 "crash_record_id": test_ids,
                 "model": name,
                 "y_true": y_test.to_numpy(),
                 "y_pred": pipeline.predict(X_test),
-                # Column 1 is the probability of the injury class.
-                "y_proba": pipeline.predict_proba(X_test)[:, 1],
+                "y_proba": injury_probability,
             }
         )
         frames.append(frame)
@@ -130,19 +153,9 @@ def save_models(pipelines):
 
 
 def save_predictions(predictions):
-    """Save the test set predictions as output/models/predictions.csv."""
+    """Save the test set predictions in PREDICTIONS_PATH."""
     MODELS_DIR.mkdir(parents=True, exist_ok=True)
-    predictions.to_csv(MODELS_DIR / "predictions.csv", index=False)
-
-
-def main():
-    X, y, crash_ids = load_model_data()
-    X_train, X_test, y_train, y_test = split_train_test(X, y)
-    pipelines = train_models(X_train, y_train)
-    predictions = predict_test_set(pipelines, X_test, y_test, crash_ids)
-    save_models(pipelines)
-    save_predictions(predictions)
-    print(f"Saved {len(pipelines)} models and their predictions in {MODELS_DIR}")
+    predictions.to_csv(PREDICTIONS_PATH, index=False)
 
 
 if __name__ == "__main__":

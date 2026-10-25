@@ -9,22 +9,15 @@ FEATURES = [
     "CRASH_HOUR",
 ]
 
+# Columns that clean_crashes needs in the raw data
+REQUIRED_COLUMNS = ["CRASH_DATE", "INJURIES_TOTAL"] + FEATURES
+
 
 def clean_crashes(df):
     df = df.copy()
 
     # Check that the necessary columns exist
-    required = [
-        "CRASH_DATE",
-        "INJURIES_TOTAL",
-        "POSTED_SPEED_LIMIT",
-        "WEATHER_CONDITION",
-        "LIGHTING_CONDITION",
-        "ROADWAY_SURFACE_COND",
-        "CRASH_HOUR",
-    ]
-
-    for column in required:
+    for column in REQUIRED_COLUMNS:
         if column not in df.columns:
             raise ValueError(f"Missing column: {column}")
 
