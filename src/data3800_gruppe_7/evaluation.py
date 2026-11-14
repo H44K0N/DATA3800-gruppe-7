@@ -27,15 +27,17 @@ from sklearn.metrics import (
     roc_curve,
 )
 
+from data3800_gruppe_7.cleaning import get_model_data
 from data3800_gruppe_7.modeling import (
     CATEGORICAL_FEATURES,
+    CONDITIONS_ONLY,
     MODELS_DIR,
     NUMERIC_FEATURES,
     PREDICTIONS_PATH,
     PROJECT_ROOT,
     RANDOM_STATE,
-    load_model_data,
-    split_train_test,
+    load_crashes,
+    split_by_period,
 )
 
 EVALUATION_DIR = PROJECT_ROOT / "output" / "evaluation"
@@ -49,11 +51,12 @@ BOOTSTRAP_SAMPLES = 1000
 PERMUTATION_REPEATS = 5
 CONFIDENCE_LEVEL = 0.95
 
-# The baseline is grey because it is only a reference. The three models get the
-# first three colors of a palette that is checked for color blindness, always
-# in this order.
+# The baseline and the conditions-only model are grey and dark grey because
+# they are only references. The three full models get the first three colors
+# of a palette that is checked for color blindness, always in this order.
 MODEL_COLORS = {
     "baseline": "#8a8a85",
+    CONDITIONS_ONLY: "#33363e",
     "logistic_regression": "#2a78d6",
     "decision_tree": "#eb6834",
     "random_forest": "#1baf7a",
@@ -97,18 +100,17 @@ def load_models(names):
 def load_test_set(predictions):
     """Rebuild the test set the same way as in modeling.py.
 
-    The split uses a fixed random state, so it gives the same crashes. We check
+    The test period is fixed, so the split gives the same crashes. We check
     that against the crash IDs in the predictions, in case the modeling changes.
     """
-    X, y, crash_ids = load_model_data()
-    _, X_test, _, y_test = split_train_test(X, y)
+    _, _, test = split_by_period(load_crashes())
     first_model = predictions["model"].iloc[0]
     saved_ids = predictions.loc[predictions["model"] == first_model, "crash_record_id"]
-    if not np.array_equal(crash_ids.loc[X_test.index].to_numpy(), saved_ids.to_numpy()):
+    if not np.array_equal(test["CRASH_RECORD_ID"].to_numpy(), saved_ids.to_numpy()):
         raise ValueError(
             "The test set does not match predictions.csv. Run the modeling again."
         )
-    return X_test, y_test
+    return get_model_data(test)
 
 
 def compute_metrics(predictions):
@@ -194,7 +196,9 @@ def compute_permutation_importance(pipelines, X_test, y_test):
     """
     rows = []
     for name, pipeline in pipelines.items():
-        if name == BASELINE:
+        # The two reference models are left out: the baseline uses no column,
+        # and the conditions-only model does not get the new ones.
+        if name in (BASELINE, CONDITIONS_ONLY):
             continue
         result = permutation_importance(
             pipeline,

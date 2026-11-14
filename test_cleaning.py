@@ -21,7 +21,7 @@ assert len(clean_df) == 108903
 assert y.sum() == 17902
 
 # Check the model features
-assert X.shape[1] == 5
+assert X.shape[1] == 9
 assert X.columns.tolist() == FEATURES
 
 # Check that injury information is not in X

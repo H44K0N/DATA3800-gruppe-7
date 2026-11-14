@@ -28,11 +28,23 @@ Final target distribution:
 
 ## Selected Predictors
 
+Conditions around the crash:
+
 1. POSTED_SPEED_LIMIT
 2. WEATHER_CONDITION
 3. LIGHTING_CONDITION
 4. ROADWAY_SURFACE_COND
 5. CRASH_HOUR
+
+Layout of the road:
+
+6. TRAFFIC_CONTROL_DEVICE
+7. TRAFFICWAY_TYPE
+
+How the crash happened:
+
+8. FIRST_CRASH_TYPE
+9. NUM_UNITS
 
 ## Data Cleaning Decisions
 
@@ -42,6 +54,7 @@ Final target distribution:
 - Converted numeric predictors to numeric types.
 - Treated 198 zero speed-limit values as missing because we could not confirm that zero represented a valid posted speed limit. These crashes were kept in the dataset.
 - Preserved UNKNOWN categories for weather (8,821), lighting (6,829), and road surface (15,362).
+- Used predictors 6 to 9 as recorded, including their UNKNOWN categories. None of them has missing values in 2025.
 - Verified that crash hours were within the valid range 0–23.
 - Preserved CRASH_DATE for chronological splitting.
 - Did not impute missing predictor values or encode categorical features during cleaning.
@@ -52,7 +65,9 @@ Unusual nonzero posted speed limits were retained for further inspection.
 
 `INJURIES_TOTAL` was used only to construct the binary target.
 
-The five selected predictors exclude injury totals, injury severity, and related outcome information.
+The nine selected predictors exclude injury totals, injury severity, and related outcome information.
+
+`FIRST_CRASH_TYPE` and `NUM_UNITS` describe the crash itself and are known when it is reported. `CRASH_TYPE`, `DAMAGE` and `MOST_SEVERE_INJURY` are recorded from the outcome and are not used.
 
 The target variable `injury` is provided separately as `y`, while the selected predictors form `X`.
 
