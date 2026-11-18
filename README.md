@@ -52,8 +52,9 @@ The `data/` and `output/models/` folders are not on GitHub, so a new clone needs
 | Download | `data_fetch.py` | `data/raw_dataset.csv` |
 | Cleaning | `src/data3800_gruppe_7/cleaning.py`, `run_cleaning.py` | `data/cleaned_crashes.csv`, `output/cleaning_summary.txt` |
 | Exploratory analysis | `notebooks/02-eda.ipynb` | Tables and figures in the notebook |
-| Modeling | `src/data3800_gruppe_7/modeling.py`, `notebooks/03-eg-modeling.ipynb` | `output/models/*.joblib`, `output/models/predictions.csv` |
+| Modeling | `src/data3800_gruppe_7/modeling.py`, `notebooks/03-eg-modeling.ipynb` | `output/models/*.joblib`, `output/models/predictions.csv`, `output/models/typical_crash.json` |
 | Evaluation | `src/data3800_gruppe_7/evaluation.py`, `notebooks/04_evaluation.ipynb` | `output/evaluation/*.csv`, `output/evaluation/*.png` |
+| GenAI assistant | `src/data3800_gruppe_7/assistant.py`, `src/data3800_gruppe_7/risk.py`, `run_assistant_examples.py` | A chat in the terminal that explains the results and scores a described crash, `output/assistant_examples.md` |
 
 ## Who did what
 
@@ -63,6 +64,7 @@ The `data/` and `output/models/` folders are not on GitHub, so a new clone needs
 | Exploratory analysis | Erik Skålhegg |
 | Modeling | Emirhan Güven |
 | Evaluation | Haakon Meyer Tischbein |
+| GenAI assistant | Emirhan Güven |
 | Integration and documentation | Sondre Gullichsen Ulsaker, with the whole group |
 
 ## Results
@@ -107,6 +109,78 @@ The models are fitted on the crashes from January to August. We choose their set
 
 - Crashes with UNKNOWN conditions have much lower odds of injury, which most likely reflects how minor crashes are reported rather than how crashes happen.
 - The crash type is only known once a crash has happened. The models can therefore rank reported crashes by injury risk, but they cannot point out dangerous roads in advance.
+
+## GenAI assistant
+
+The assistant is a chat in the terminal that does two things.
+
+It answers questions about our results. The language model gets the result files in `output/` (the cleaning summary and the evaluation tables) and is told to answer only from them, to name the file behind the numbers, and to say so when the files cannot answer.
+
+It also scores a crash that you describe in your own words. The language model picks out the details, such as what was hit, the hour and the weather, and asks for our trained logistic regression to be run on them. The numbers come from our model and the test set, and the language model only explains them. For a described crash, `risk.py` returns:
+
+- the risk score of the model, between 0 and 1
+- how many crashes in the test set got about the same score, and how large a share of them had an injury, next to the 15.1% for all test crashes
+- what the score would be if each given detail were swapped for its most common value, which shows what drives the score
+
+The risk score is not a probability, because the model is trained with balanced class weights. The share of similar test crashes is the number to read as the chance of an injury. Details that are not given get their most common value, and the assistant says which ones it assumed. The tool rejects a value the model has never seen, because the encoder would otherwise ignore it without a warning.
+
+The assistant needs a free API key from Google AI Studio, https://aistudio.google.com/apikey. Put the key in a file called `.env` in the project root. That file is in `.gitignore`, so the key stays on your own machine:
+
+```text
+GEMINI_API_KEY=your-key
+```
+
+Run the modeling and the evaluation first. Then start the chat, and stop it with an empty line:
+
+```bash
+uv run python -m data3800_gruppe_7.assistant
+```
+
+A single question also works:
+
+```bash
+uv run python -m data3800_gruppe_7.assistant "Which model is best?"
+```
+
+This is a real conversation from 18 November 2026. The line that starts with `score_crash:` shows what the language model sent to our model:
+
+```text
+> A car hit a pedestrian at 11 pm. It was raining, the road was wet and the street lights were
+on.
+score_crash: {"CRASH_HOUR": 23, "ROADWAY_SURFACE_COND": "WET", "LIGHTING_CONDITION": "DARKNESS,
+LIGHTED ROAD", "FIRST_CRASH_TYPE": "PEDESTRIAN", "WEATHER_CONDITION": "RAIN"}
+Among test crashes with a similar risk score, 80.5% involved an injury, compared with 15.1%
+across all test crashes. The tool assumed typical values for the speed limit (30 mph), number of
+units (2), trafficway type (not divided), and traffic control device (no controls). Whether the
+vehicle hits a pedestrian rather than a parked motor vehicle matters most for this score. The
+crash hour, lighting condition, and wet road surface also raise the associated risk slightly.
+These findings represent associations in police-reported crashes rather than direct causes.
+
+> And if the car had hit a parked car instead?
+score_crash: {"CRASH_HOUR": 23, "FIRST_CRASH_TYPE": "PARKED MOTOR VEHICLE", "WEATHER_CONDITION":
+"RAIN", "ROADWAY_SURFACE_COND": "WET", "LIGHTING_CONDITION": "DARKNESS, LIGHTED ROAD"}
+Among test crashes with a similar risk score, 6.1% involved an injury, compared with 15.1%
+across all test crashes. The tool assumed typical values for the speed limit (30 mph), number of
+units (2), trafficway type (not divided), and traffic control device (no controls). The hour of
+the crash matters most in raising the score for this scenario. The lighting condition and wet
+road surface also slightly increase the associated risk. These findings represent associations
+in police-reported crashes rather than direct causes.
+
+> Which model is best, and how sure are we?
+The group prefers the logistic regression because it scores similarly to the random forest and
+is easier to interpret. On the test set, logistic regression achieved a PR-AUC of 0.502 and an
+F1-score of 0.434 [output/evaluation/metrics.csv]. The random forest achieved a PR-AUC of 0.501
+and an F1-score of 0.439 [output/evaluation/metrics.csv]. The 95% bootstrap interval for the
+difference between logistic regression and random forest includes 0 for both F1 (-0.012 to
+0.002) and PR-AUC (-0.008 to 0.011), meaning their performance does not differ significantly
+[output/evaluation/metric_intervals.csv]. Logistic regression is significantly better than the
+decision tree, as their PR-AUC difference interval excludes 0 (0.056 to 0.080)
+[output/evaluation/metric_intervals.csv].
+```
+
+The assistant uses Google's Gemini API through the `google-genai` library, as in the course example. The default model is `gemini-3.5-flash-lite`. In November 2026 its free tier allowed 15 requests a minute and 500 a day. We let it think at the highest level before it answers, because with less thinking it guessed details the user had not given. `gemini-3.8-flash` is a stronger model, but its free tier only allowed 5 requests a minute and 20 a day, and on the evening we tested it, it was too busy to answer. To use it or another model, add `GEMINI_MODEL=<model id>` to `.env`.
+
+`run_assistant_examples.py` asks the assistant eight fixed questions and saves the answers in `output/assistant_examples.md`, with the tool calls behind them. The questions cover the results, three described crashes (one in Norwegian and one with a speed limit of 500 mph), a question about cause, a question the data cannot answer and a request outside the project. A language model does not answer the same way every time, so we read the answers and compare their numbers with the files.
 
 ---
 
