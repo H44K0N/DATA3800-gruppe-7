@@ -1,13 +1,28 @@
 
 import pandas as pd
 
-FEATURES = [
+# The conditions around the crash, which the first models used alone
+CONDITION_FEATURES = [
     "POSTED_SPEED_LIMIT",
     "WEATHER_CONDITION",
     "LIGHTING_CONDITION",
     "ROADWAY_SURFACE_COND",
     "CRASH_HOUR",
 ]
+
+# The layout of the road where the crash happened
+ROAD_FEATURES = [
+    "TRAFFIC_CONTROL_DEVICE",
+    "TRAFFICWAY_TYPE",
+]
+
+# How the crash happened: what was hit, and how many vehicles and people took part
+CRASH_FEATURES = [
+    "FIRST_CRASH_TYPE",
+    "NUM_UNITS",
+]
+
+FEATURES = CONDITION_FEATURES + ROAD_FEATURES + CRASH_FEATURES
 
 # Columns that clean_crashes needs in the raw data
 REQUIRED_COLUMNS = ["CRASH_DATE", "INJURIES_TOTAL"] + FEATURES
@@ -52,6 +67,11 @@ def clean_crashes(df):
 
     df["CRASH_HOUR"] = pd.to_numeric(
         df["CRASH_HOUR"],
+        errors="coerce"
+    )
+
+    df["NUM_UNITS"] = pd.to_numeric(
+        df["NUM_UNITS"],
         errors="coerce"
     )
 

@@ -39,7 +39,7 @@ uv run jupyter lab
 1. `uv sync` installs the right Python version and the packages in `uv.lock`.
 2. `data_fetch.py` downloads the raw data to `data/raw_dataset.csv`.
 3. `run_cleaning.py` saves the cleaned data in `data/cleaned_crashes.csv`. The EDA notebook reads this file, so it has to exist before the notebook runs.
-4. The modeling module trains four models and saves them in `output/models/`, together with their predictions on the test set. The evaluation notebook reads these files.
+4. The modeling module fits the models on the crashes from January to August, chooses their settings on September and October, and saves the chosen models in `output/models/`, together with their predictions on November and December. The evaluation notebook reads these files.
 5. The evaluation module computes the metrics, confusion matrices and feature importance, and saves the tables and figures in `output/evaluation/`. It takes about a minute.
 6. In Jupyter, run the notebooks in order: `02-eda.ipynb`, `03-eg-modeling.ipynb` and `04_evaluation.ipynb`.
 
@@ -81,29 +81,32 @@ These are associations in police-reported crashes and do not show that the condi
 
 ### Models
 
-We train four models: a baseline that always predicts no injury, logistic regression, a decision tree and a random forest. On the test set of 21,781 crashes:
+The models are fitted on the crashes from January to August. We choose their settings on September and October, and the results below are from the 17,116 crashes in November and December, which the models never saw. The first version of the models only got the five conditions from the exploratory analysis. They now also get the layout of the road (traffic control device and type of trafficway) and how the crash happened (what was hit first, and how many vehicles and people were involved).
 
 | Model | Accuracy | Precision | Recall | F1 | ROC-AUC | PR-AUC |
 | --- | --- | --- | --- | --- | --- | --- |
-| Baseline | 0.836 | 0.000 | 0.000 | 0.000 | 0.500 | 0.164 |
-| Logistic regression | 0.475 | 0.201 | 0.739 | 0.316 | 0.613 | 0.216 |
-| Decision tree | 0.423 | 0.196 | 0.807 | 0.315 | 0.601 | 0.205 |
-| Random forest | 0.458 | 0.200 | 0.770 | 0.318 | 0.613 | 0.219 |
+| Baseline, always no injury | 0.849 | 0.000 | 0.000 | 0.000 | 0.500 | 0.151 |
+| Logistic regression, five conditions only | 0.504 | 0.190 | 0.700 | 0.299 | 0.620 | 0.207 |
+| Logistic regression | 0.719 | 0.312 | 0.713 | 0.434 | 0.803 | 0.502 |
+| Decision tree | 0.768 | 0.343 | 0.580 | 0.431 | 0.770 | 0.434 |
+| Random forest | 0.728 | 0.319 | 0.701 | 0.439 | 0.803 | 0.501 |
 
 - The baseline has the best accuracy and finds no injuries, so we compare the models on recall, precision, F1 and PR-AUC instead.
-- The models find 74 to 81% of the injuries, but only about one in five flagged crashes had one, against one in six for a random crash. The five conditions carry real but weak information about injury.
+- With only the five conditions, the model finds 70% of the injuries by flagging 56% of all crashes, and 19% of the flagged crashes had an injury. With all features it finds 71% by flagging 35%, and 31% of them had an injury, twice the share for a random crash.
 
-![Confusion matrices for the four models on the test set](output/evaluation/confusion_matrices.png)
+![Confusion matrices for the five models on the test set](output/evaluation/confusion_matrices.png)
 
 - Logistic regression and the random forest are equally good: a paired bootstrap interval for their difference in PR-AUC contains 0. We prefer logistic regression because it is simpler and easier to interpret. The decision tree ranks crashes worse.
 
-![ROC and precision-recall curves for the three trained models](output/evaluation/roc_pr_curves.png)
+![ROC and precision-recall curves for the four trained models](output/evaluation/roc_pr_curves.png)
 
-- The speed limit is the most important condition in all models, followed by road surface and lighting. Higher speed limits, wet roads, darkness and night-time go with more injuries, snow and ice with fewer.
+- How the crash happened is by far the most important input. A crash with a pedestrian has about 26 times the odds of injury of the other crash types, and a crash with a cyclist about 10 times. The road layout comes next, and the five conditions matter least.
+- The conditions still point the same way as in the exploratory analysis: higher speed limits, wet roads, darkness and night-time go with more injuries.
 
-![Permutation importance of the five conditions in the three trained models](output/evaluation/permutation_importance.png)
+![Permutation importance of the nine inputs in the three models that use them all](output/evaluation/permutation_importance.png)
 
 - Crashes with UNKNOWN conditions have much lower odds of injury, which most likely reflects how minor crashes are reported rather than how crashes happen.
+- The crash type is only known once a crash has happened. The models can therefore rank reported crashes by injury risk, but they cannot point out dangerous roads in advance.
 
 ---
 
@@ -138,4 +141,4 @@ If `uv.lock` gets a merge conflict, don't edit it by hand: accept either side, r
 * Name notebooks `NN-initials-topic.ipynb`, e.g. `01-hmt-eda.ipynb`. One notebook, one owner.
 * Reusable code (loading, cleaning, features) goes in `src/`, not in notebooks.
 * Start every notebook with `%load_ext autoreload` and `%autoreload 2` so edits in `src/` are picked up without restarting the kernel.
-* Outputs are stripped automatically on commit, except in `02-eda.ipynb`, which keeps its figures. If a commit is aborted because the hook modified files, `git add` the notebook and commit again.
+* Outputs are stripped automatically on commit, except in the notebooks that set `keep_output` in their metadata. The three analysis notebooks (`02`, `03` and `04`) do, so their results show on GitHub. If a commit is aborted because the hook modified files, `git add` the notebook and commit again.
