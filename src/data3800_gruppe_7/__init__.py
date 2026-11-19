@@ -1,2 +1,1 @@
-def main() -> None:
-    print("Hello from data3800-gruppe-7!")
+"""Injury risk in police-reported traffic crashes in Chicago: cleaning, modeling, evaluation and the assistant."""

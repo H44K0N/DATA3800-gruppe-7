@@ -5,6 +5,7 @@ from data3800_gruppe_7.modeling import (
     select_best,
     split_by_period,
 )
+from data3800_gruppe_7.risk import NUMBER_LIMITS
 
 # Load the cleaned crashes and split them by period
 crashes = load_crashes()
@@ -18,6 +19,10 @@ assert all_ids.is_unique
 # Check that the periods follow each other in time
 assert train["CRASH_DATE"].max() < validation["CRASH_DATE"].min()
 assert validation["CRASH_DATE"].max() < test["CRASH_DATE"].min()
+
+# Check that the limits of the crash scorer are the range of the cleaned crashes
+for column, limits in NUMBER_LIMITS.items():
+    assert (crashes[column].min(), crashes[column].max()) == limits
 
 # Check that the best setting is the one with the highest validation score
 scores = pd.DataFrame(

@@ -7,8 +7,8 @@ Run from the project root with:
 The script cleans data/raw_dataset.csv with cleaning.py and splits the year
 into a training, a validation and a test period. It fits every model setting
 on the training period and keeps the setting of each model that scores best
-on the validation period. Those models and their predictions on the test
-period are saved in output/models/.
+on the validation period. Those models, their predictions on the test period
+and the typical crash of the training period are saved in output/models/.
 """
 
 from pathlib import Path
@@ -39,10 +39,13 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 RAW_DATA_PATH = PROJECT_ROOT / "data" / "raw_dataset.csv"
 MODELS_DIR = PROJECT_ROOT / "output" / "models"
 PREDICTIONS_PATH = MODELS_DIR / "predictions.csv"
+TYPICAL_CRASH_PATH = MODELS_DIR / "typical_crash.json"
 
 # Reading only these columns is much faster than reading all 49. The cleaning
-# needs REQUIRED_COLUMNS, and the predictions need the crash IDs.
-RAW_COLUMNS = ["CRASH_RECORD_ID"] + REQUIRED_COLUMNS
+# needs REQUIRED_COLUMNS, and the predictions need the crash IDs. REPORT_TYPE
+# is not a feature. The evaluation uses it to compare the crashes the police
+# attended with the desk reports.
+RAW_COLUMNS = ["CRASH_RECORD_ID", "REPORT_TYPE"] + REQUIRED_COLUMNS
 
 NUMERIC_FEATURES = ["POSTED_SPEED_LIMIT", "NUM_UNITS"]
 # Every other feature is a category. That includes the hour, because injury
@@ -50,7 +53,7 @@ NUMERIC_FEATURES = ["POSTED_SPEED_LIMIT", "NUM_UNITS"]
 CATEGORICAL_FEATURES = [column for column in FEATURES if column not in NUMERIC_FEATURES]
 
 # The models learn from January to August. We choose their settings on
-# September and October, and test them once on November and December.
+# September and October, and test them on November and December.
 LAST_TRAINING_MONTH = 8
 LAST_VALIDATION_MONTH = 10
 
@@ -76,6 +79,7 @@ def main():
     predictions = predict_test_set(pipelines, test)
     save_models(pipelines)
     save_predictions(predictions)
+    save_typical_crash(train)
     print(scores.round(3).to_string(index=False))
     print(f"Saved {len(pipelines)} models and their predictions in {MODELS_DIR}")
 
@@ -197,7 +201,7 @@ def score_candidates(candidates, train, validation):
 def pr_auc(pipeline, crashes):
     """Return the PR-AUC of a fitted pipeline on a set of crashes."""
     X, y = get_model_data(crashes)
-    # Column 1 of predict_proba is the probability of class 1, injury.
+    # Column 1 of predict_proba is the score of class 1, injury.
     return average_precision_score(y, pipeline.predict_proba(X)[:, 1])
 
 
@@ -236,6 +240,17 @@ def save_predictions(predictions):
     """Save the test set predictions in PREDICTIONS_PATH."""
     MODELS_DIR.mkdir(parents=True, exist_ok=True)
     predictions.to_csv(PREDICTIONS_PATH, index=False)
+
+
+def save_typical_crash(train):
+    """Save the most common value of each feature in the training set.
+
+    The assistant compares a described crash with this one. Saving it beside
+    the models means the assistant does not need the training data.
+    """
+    X_train, _ = get_model_data(train)
+    MODELS_DIR.mkdir(parents=True, exist_ok=True)
+    X_train.mode().iloc[0].to_json(TYPICAL_CRASH_PATH)
 
 
 if __name__ == "__main__":
