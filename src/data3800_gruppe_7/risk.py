@@ -18,8 +18,11 @@ MODEL_NAME = "logistic_regression"
 # Test crashes count as similar when their risk score is at most this far away.
 SIMILAR_SCORE_DISTANCE = 0.05
 
-# The numbers a crash may have. A value outside these limits is rejected.
-NUMBER_LIMITS = {"POSTED_SPEED_LIMIT": (1, 100), "NUM_UNITS": (1, 20)}
+# The lowest and highest speed limit (mph) and number of units among the 2025
+# crashes. A value outside them is rejected, because the logistic regression
+# would carry its straight line on to values we have no crashes to check it
+# against. test_modeling.py compares the limits with the data.
+NUMBER_LIMITS = {"POSTED_SPEED_LIMIT": (1, 70), "NUM_UNITS": (1, 14)}
 
 
 class CrashScorer:
@@ -127,9 +130,11 @@ class CrashScorer:
                         "typical_value": typical,
                         "risk_score_with_typical_value": round(score_with_typical, 3),
                         # Below 0 when the given value lowers the score.
+                        # Adding 0.0 turns a rounded -0.0 into 0.0.
                         "raises_risk_score_by": round(
                             risk_score - score_with_typical, 3
-                        ),
+                        )
+                        + 0.0,
                     }
                 )
         return sorted(

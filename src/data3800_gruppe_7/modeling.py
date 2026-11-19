@@ -42,8 +42,10 @@ PREDICTIONS_PATH = MODELS_DIR / "predictions.csv"
 TYPICAL_CRASH_PATH = MODELS_DIR / "typical_crash.json"
 
 # Reading only these columns is much faster than reading all 49. The cleaning
-# needs REQUIRED_COLUMNS, and the predictions need the crash IDs.
-RAW_COLUMNS = ["CRASH_RECORD_ID"] + REQUIRED_COLUMNS
+# needs REQUIRED_COLUMNS, and the predictions need the crash IDs. REPORT_TYPE
+# is not a feature. The evaluation uses it to compare the crashes the police
+# attended with the desk reports.
+RAW_COLUMNS = ["CRASH_RECORD_ID", "REPORT_TYPE"] + REQUIRED_COLUMNS
 
 NUMERIC_FEATURES = ["POSTED_SPEED_LIMIT", "NUM_UNITS"]
 # Every other feature is a category. That includes the hour, because injury
@@ -51,7 +53,7 @@ NUMERIC_FEATURES = ["POSTED_SPEED_LIMIT", "NUM_UNITS"]
 CATEGORICAL_FEATURES = [column for column in FEATURES if column not in NUMERIC_FEATURES]
 
 # The models learn from January to August. We choose their settings on
-# September and October, and test them once on November and December.
+# September and October, and test them on November and December.
 LAST_TRAINING_MONTH = 8
 LAST_VALIDATION_MONTH = 10
 
@@ -199,7 +201,7 @@ def score_candidates(candidates, train, validation):
 def pr_auc(pipeline, crashes):
     """Return the PR-AUC of a fitted pipeline on a set of crashes."""
     X, y = get_model_data(crashes)
-    # Column 1 of predict_proba is the probability of class 1, injury.
+    # Column 1 of predict_proba is the score of class 1, injury.
     return average_precision_score(y, pipeline.predict_proba(X)[:, 1])
 
 

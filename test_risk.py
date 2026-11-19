@@ -37,6 +37,8 @@ assert biggest_change["raises_risk_score_by"] > 0
 rejected = [
     {"WEATHER_CONDITION": "SUNNY"},
     {"POSTED_SPEED_LIMIT": 500},
+    {"POSTED_SPEED_LIMIT": 71},
+    {"NUM_UNITS": 15},
     {"CRASH_HOUR": 24},
     {"COLOR": "RED"},
 ]

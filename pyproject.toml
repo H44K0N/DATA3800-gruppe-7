@@ -1,7 +1,7 @@
 [project]
 name = "data3800-gruppe-7"
 version = "0.1.0"
-description = "Add your description here"
+description = "Predicts whether a police-reported traffic crash in Chicago led to an injury"
 readme = "README.md"
 authors = [
     { name = "Haakon Meyer Tischbein", email = "haameti@gmail.com" }
@@ -19,9 +19,6 @@ dependencies = [
     "scikit-learn>=1.9.0",
     "seaborn>=0.13.2",
 ]
-
-[project.scripts]
-data3800-gruppe-7 = "data3800_gruppe_7:main"
 
 [build-system]
 requires = ["uv_build>=0.12.7,<0.13.0"]
