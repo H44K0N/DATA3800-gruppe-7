@@ -21,7 +21,7 @@ SIMILAR_SCORE_DISTANCE = 0.05
 # The lowest and highest speed limit (mph) and number of units among the 2025
 # crashes. A value outside them is rejected, because the logistic regression
 # would carry its straight line on to values we have no crashes to check it
-# against. test_modeling.py compares the limits with the data.
+# against. tests/test_modeling.py compares the limits with the data.
 NUMBER_LIMITS = {"POSTED_SPEED_LIMIT": (1, 70), "NUM_UNITS": (1, 14)}
 
 
