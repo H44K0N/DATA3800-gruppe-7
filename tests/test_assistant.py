@@ -1,6 +1,5 @@
 import io
 from contextlib import redirect_stdout
-from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -10,6 +9,7 @@ from google.genai import types
 
 from data3800_gruppe_7.assistant import Assistant, build_system_prompt, build_tool
 from data3800_gruppe_7.cleaning import FEATURES
+from data3800_gruppe_7.evaluation import EVALUATION_DIR
 from data3800_gruppe_7.modeling import MODELS_DIR, PREDICTIONS_PATH, TYPICAL_CRASH_PATH
 from data3800_gruppe_7.risk import MODEL_NAME, CrashScorer
 
@@ -18,7 +18,7 @@ needs_outputs = pytest.mark.skipif(
         (MODELS_DIR / f"{MODEL_NAME}.joblib").exists()
         and PREDICTIONS_PATH.exists()
         and TYPICAL_CRASH_PATH.exists()
-        and Path("output/evaluation/metrics.csv").exists()
+        and (EVALUATION_DIR / "metrics.csv").exists()
     ),
     reason="model and evaluation output missing, run modeling and evaluation first",
 )
