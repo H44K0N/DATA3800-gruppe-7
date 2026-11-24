@@ -79,7 +79,7 @@ The processing script is `run_cleaning.py`.
 
 The cleaned data is saved as `data/cleaned_crashes.csv`.
 
-All automated checks in `test_cleaning.py` passed.
+All automated checks in `tests/test_cleaning.py` passed.
 
 The input file is data/raw_dataset.csv. The original data file is not modified by the cleaning script.
 

@@ -54,14 +54,10 @@ uv run python -m data3800_gruppe_7.evaluation
 
 The download time depends on the connection. The cleaning takes under a minute, and the modeling and the evaluation about a minute each. `data/` and `output/models/` are not in the Git repo, so a new clone needs steps 2 to 5 before the notebooks, the tests or the assistant will run. A `FileNotFoundError` means that an earlier step has not been run.
 
-The tests are plain scripts with asserts, and they read the files from the five steps above. Each one stops with an error if a check fails and prints `ALL TESTS PASSED!` otherwise. Together they take under a minute.
+The tests use pytest and read the files from the five steps above. A test is skipped if the file it needs is missing, so run the steps first. Together they take under a minute.
 
 ```bash
-uv run python test_cleaning.py
-uv run python test_modeling.py
-uv run python test_evaluation.py
-uv run python test_risk.py
-uv run python test_assistant.py
+uv run pytest
 ```
 
 The notebooks keep their outputs, so they can be read without running anything. To run them, start Jupyter and go through `02-eda.ipynb`, `03-eg-modeling.ipynb` and `04_evaluation.ipynb` in that order:
@@ -93,7 +89,7 @@ Only the GenAI assistant needs an API key. Its setup is under [GenAI assistant](
 | Evaluation | `src/data3800_gruppe_7/evaluation.py`, `notebooks/04_evaluation.ipynb` | 8 tables and 5 figures in `output/evaluation/` |
 | GenAI assistant | `src/data3800_gruppe_7/assistant.py`, `src/data3800_gruppe_7/risk.py`, `run_assistant_examples.py` | A chat in the terminal, `output/assistant_examples.md` |
 
-`output/cleaning_summary.txt` is a summary of the cleaning that we wrote by hand. `check_data.py` and `check_features.py` are the first checks we ran on the raw and the cleaned data, and we keep them for reference.
+`output/cleaning_summary.txt` is a summary of the cleaning that we wrote by hand. `scripts/check_data.py` and `scripts/check_features.py` are the first checks we ran on the raw and the cleaned data, and we keep them for reference.
 
 ## Results
 
